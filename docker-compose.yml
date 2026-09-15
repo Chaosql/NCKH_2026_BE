@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  nckh-postgres:
+    image: postgres:15
+    container_name: nckh-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: NCKH
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - nckh-postgres-data:/var/lib/postgresql/data
+    networks:
+      - nckh-network
+
+  nckh-redis:
+    image: redis:7-alpine
+    container_name: nckh-redis
+    restart: unless-stopped
+    networks:
+      - nckh-network
+
+  nckh-be:
+    image: ${ECR_IMAGE:-nckh-be:latest}
+    container_name: nckh-be
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      DB_URL: jdbc:postgresql://nckh-postgres:5432/NCKH
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_LAST_NAME: ${ADMIN_LAST_NAME}
+      ADMIN_FIRST_NAME: ${ADMIN_FIRST_NAME}
+      SPRING_DATA_REDIS_HOST: nckh-redis
+    depends_on:
+      - nckh-postgres
+      - nckh-redis
+    networks:
+      - nckh-network
+
+volumes:
+  nckh-postgres-data:
+
+networks:
+  nckh-network:
+    driver: bridge
